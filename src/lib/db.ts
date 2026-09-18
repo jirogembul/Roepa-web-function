@@ -11,8 +11,10 @@ import { PrismaLibSql } from "@prisma/adapter-libsql";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
+// A local "file:" URL needs no token; a hosted Turso "libsql://" URL does.
 const adapter = new PrismaLibSql({
   url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
+  authToken: process.env.TURSO_AUTH_TOKEN?.trim() || undefined,
 });
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });

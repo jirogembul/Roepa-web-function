@@ -51,6 +51,35 @@ policy, atau jalankan `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope 
 
 Buka http://localhost:3000.
 
+## Deploy ke Vercel
+
+Serverless punya filesystem read-only, jadi SQLite di disk tidak bisa dipakai di
+produksi. Databasenya pindah ke Turso (SQLite yang di-host, adapter-nya sama).
+
+1. Buat database di [turso.tech](https://turso.tech) (free tier), catat URL
+   `libsql://...` dan auth token-nya.
+2. Terapkan skema sekali dari mesin lokal — `prisma migrate deploy` tidak bisa
+   dipakai di sini karena Prisma 7 hanya menerima URL biasa untuk migration:
+   ```bash
+   turso db shell <nama-db> < prisma/migrations/20260918164830_init/migration.sql
+   ```
+3. Di Vercel, isi environment variables:
+
+   | Key | Value |
+   |---|---|
+   | `DATABASE_URL` | `libsql://...turso.io` |
+   | `TURSO_AUTH_TOKEN` | token dari Turso (tandai sensitif) |
+   | `LLM_PROVIDER` | `gemini` |
+   | `GEMINI_API_KEY` | API key kamu (tandai sensitif) |
+
+   Biarkan Build/Output/Install Command memakai default Vercel.
+
+**Foto struk tidak tersimpan di produksi.** `saveReceiptImage()` gagal diam-diam
+di filesystem read-only dan struk tetap tercatat tanpa foto — saat ini tidak ada
+bagian UI yang menampilkan foto tersimpan, jadi tidak ada fitur yang hilang.
+Untuk menyimpannya secara permanen, ganti isi `src/lib/image.ts` ke object
+storage (Vercel Blob / S3).
+
 ## Struktur penting
 
 ```

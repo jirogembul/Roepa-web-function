@@ -13,7 +13,7 @@ interface DraftItem {
 }
 
 interface Draft {
-  imagePath: string;
+  imagePath: string | null;
   merchant: string | null;
   purchasedAt: string | null;
   currency: string;
@@ -75,7 +75,7 @@ async function prepareImage(file: File): Promise<Blob> {
   }
 }
 
-function toDraft(imagePath: string, parsed: Omit<Draft, "imagePath" | "items"> & {
+function toDraft(imagePath: string | null, parsed: Omit<Draft, "imagePath" | "items"> & {
   items: Omit<DraftItem, "id">[];
 }): Draft {
   return {
