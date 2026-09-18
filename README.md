@@ -18,7 +18,9 @@ pelaporan keuangan perusahaan (multi-akun, multi-user, laporan periodik, dst).
 ## Stack
 
 - **Next.js 16** (App Router, TypeScript, Tailwind v4)
-- **Prisma 7 + SQLite** (`@prisma/adapter-better-sqlite3`) — lihat
+- **Prisma 7 + SQLite** (`@prisma/adapter-libsql` — dipilih karena binary-nya
+  prebuilt per platform, jadi `npm install` tidak butuh Python/C++ build tools
+  di Windows) — lihat
   `src/lib/db.ts` dan `src/lib/receipts.ts`. Semua akses data lewat
   `src/lib/receipts.ts`; ganti ke Postgres nanti cukup ubah `DATABASE_URL`,
   adapter di `db.ts`, dan `datasource.provider` di `prisma/schema.prisma`.
