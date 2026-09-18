@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f6f1e6;
+  --paper-raised: #fbf8f1;
+  --ink: #1d1a14;
+  --ink-soft: #6b6355;
+  --hairline: #d8cfba;
+  --stamp: #b6461f;
+  --stamp-ink: #fbf8f1;
+  --ledger-green: #33604a;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-hairline: var(--hairline);
+  --color-stamp: var(--stamp);
+  --color-stamp-ink: var(--stamp-ink);
+  --color-ledger-green: var(--ledger-green);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-fraunces);
+}
+
+:root:not([data-theme="light"]) {
+  @media (prefers-color-scheme: dark) {
+    --paper: #17140f;
+    --paper-raised: #201c15;
+    --ink: #f1ead9;
+    --ink-soft: #a89d87;
+    --hairline: #39331f;
+    --stamp: #e07a4c;
+    --stamp-ink: #17140f;
+    --ledger-green: #6fb894;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #17140f;
+  --paper-raised: #201c15;
+  --ink: #f1ead9;
+  --ink-soft: #a89d87;
+  --hairline: #39331f;
+  --stamp: #e07a4c;
+  --stamp-ink: #17140f;
+  --ledger-green: #6fb894;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+.tabular-money {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

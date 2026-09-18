@@ -1,0 +1,37 @@
+// Prisma schema for the receipt-to-finance prototype.
+// SQLite for the foundation stage; switch the datasource provider/url
+// to Postgres later without touching the app code (see src/lib/db.ts).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Receipt {
+  id          String   @id @default(cuid())
+  merchant    String?
+  purchasedAt DateTime?
+  currency    String   @default("IDR")
+  subtotal    Float?
+  tax         Float?
+  total       Float
+  imagePath   String?
+  items       ReceiptItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ReceiptItem {
+  id         String  @id @default(cuid())
+  receipt    Receipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  receiptId  String
+  name       String
+  quantity   Float   @default(1)
+  unitPrice  Float?
+  totalPrice Float
+  category   String?
+}
