@@ -52,7 +52,9 @@ export class GeminiReceiptParser implements ReceiptParser {
       );
     }
     this.client = new GoogleGenAI({ apiKey });
-    this.model = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+    // Google retires models for new API keys, so when this one starts returning
+    // 404 the message names its replacement — set GEMINI_MODEL to it.
+    this.model = process.env.GEMINI_MODEL ?? "gemini-3.6-flash";
   }
 
   async parseReceipt({ base64, mediaType }: ReceiptImage): Promise<ParsedReceipt> {
