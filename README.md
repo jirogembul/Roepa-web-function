@@ -66,6 +66,14 @@ src/components/receipt-app.tsx  # UI: upload -> review/edit -> riwayat
   taksonomi/master data kategori — ditambahkan saat kebutuhan pelaporan jadi
   jelas, bukan diasumsikan sekarang.
 
+## Batasan yang diketahui
+
+- Foto struk ditulis ke disk saat parsing, sebelum user menekan "Simpan". Kalau
+  user membatalkan, file-nya jadi yatim di `public/uploads/receipts/`. Belum ada
+  pembersihan otomatis — cukup untuk prototype, perlu ditangani sebelum produksi.
+- Foto dikecilkan di browser (maks sisi 1568px, JPEG) sebelum diunggah, supaya
+  hemat token dan lolos batas ukuran API.
+
 ## Belum termasuk (sengaja, hindari over-engineering)
 
 - Autentikasi & multi-user/multi-company

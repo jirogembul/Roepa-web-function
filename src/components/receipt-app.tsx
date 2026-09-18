@@ -35,13 +35,53 @@ interface SavedReceipt {
 
 type Stage = "upload" | "parsing" | "review" | "saving";
 
+// Anthropic's recommended max edge. Larger images cost more tokens without
+// reading any better, and phone photos are several times this.
+const MAX_IMAGE_EDGE = 1568;
+
+// crypto.randomUUID() only exists in secure contexts, and this app gets opened
+// over http://<lan-ip> from a phone to photograph receipts.
+function makeId(): string {
+  return typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `id-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+async function readJson(res: Response) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+// Downscaling in the browser keeps the upload small, cuts the per-receipt token
+// bill, and re-encodes phone formats (HEIC) the API would otherwise reject.
+async function prepareImage(file: File): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_IMAGE_EDGE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const context = canvas.getContext("2d");
+    if (!context) return file;
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    return await new Promise((resolve) =>
+      canvas.toBlob((blob) => resolve(blob ?? file), "image/jpeg", 0.85),
+    );
+  } catch {
+    return file;
+  }
+}
+
 function toDraft(imagePath: string, parsed: Omit<Draft, "imagePath" | "items"> & {
   items: Omit<DraftItem, "id">[];
 }): Draft {
   return {
     ...parsed,
     imagePath,
-    items: parsed.items.map((item) => ({ ...item, id: crypto.randomUUID() })),
+    items: parsed.items.map((item) => ({ ...item, id: makeId() })),
   };
 }
 
@@ -61,8 +101,8 @@ export default function ReceiptApp() {
   async function refreshReceipts() {
     const res = await fetch("/api/receipts");
     if (!res.ok) return;
-    const data = await res.json();
-    setReceipts(data.receipts);
+    const data = await readJson(res);
+    if (data?.receipts) setReceipts(data.receipts);
   }
 
   async function handleFile(file: File) {
@@ -70,16 +110,17 @@ export default function ReceiptApp() {
     setPreviewUrl(URL.createObjectURL(file));
     setStage("parsing");
 
-    const formData = new FormData();
-    formData.append("image", file);
-
     try {
+      const image = await prepareImage(file);
+      const formData = new FormData();
+      formData.append("image", image, "receipt.jpg");
+
       const res = await fetch("/api/receipts/parse", {
         method: "POST",
         body: formData,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Gagal membaca struk");
+      const data = await readJson(res);
+      if (!res.ok) throw new Error(data?.error ?? "Gagal membaca struk");
       setDraft(toDraft(data.imagePath, data.parsed));
       setStage("review");
     } catch (err) {
@@ -107,7 +148,7 @@ export default function ReceiptApp() {
             ...d,
             items: [
               ...d.items,
-              { id: crypto.randomUUID(), name: "", quantity: 1, unitPrice: null, totalPrice: 0, category: null },
+              { id: makeId(), name: "", quantity: 1, unitPrice: null, totalPrice: 0, category: null },
             ],
           }
         : d,
@@ -147,8 +188,8 @@ export default function ReceiptApp() {
           })),
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Gagal menyimpan");
+      const data = await readJson(res);
+      if (!res.ok) throw new Error(data?.error ?? "Gagal menyimpan");
       await refreshReceipts();
       resetToUpload();
     } catch (err) {
@@ -157,8 +198,13 @@ export default function ReceiptApp() {
     }
   }
 
-  const totalSpent = receipts.reduce((sum, r) => sum + r.total, 0);
-  const primaryCurrency = receipts[0]?.currency ?? "IDR";
+  // Totals are kept per currency — summing IDR and USD into one number would
+  // be a plausible-looking lie.
+  const totalsByCurrency = receipts.reduce<Record<string, number>>((acc, r) => {
+    acc[r.currency] = (acc[r.currency] ?? 0) + r.total;
+    return acc;
+  }, {});
+  const totals = Object.entries(totalsByCurrency);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 py-10 sm:px-8">
@@ -174,9 +220,15 @@ export default function ReceiptApp() {
         </div>
         <div className="rotate-2 rounded-sm border-2 border-stamp px-4 py-2 text-right text-stamp">
           <p className="text-[0.65rem] tracking-[0.2em] uppercase">Total tercatat</p>
-          <p className="tabular-money text-xl font-semibold">
-            {formatMoney(totalSpent, primaryCurrency)}
-          </p>
+          {totals.length === 0 ? (
+            <p className="tabular-money text-xl font-semibold">{formatMoney(0, "IDR")}</p>
+          ) : (
+            totals.map(([currency, amount]) => (
+              <p key={currency} className="tabular-money text-xl font-semibold">
+                {formatMoney(amount, currency)}
+              </p>
+            ))
+          )}
         </div>
       </header>
 

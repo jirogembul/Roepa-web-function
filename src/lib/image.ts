@@ -15,7 +15,9 @@ const EXTENSION_BY_MEDIA_TYPE: Record<SupportedImageMediaType, string> = {
 export function isSupportedImageMediaType(
   value: string,
 ): value is SupportedImageMediaType {
-  return value in EXTENSION_BY_MEDIA_TYPE;
+  // hasOwnProperty, not `in`: `in` walks the prototype chain, so a client
+  // sending Content-Type "toString" would pass the allowlist.
+  return Object.prototype.hasOwnProperty.call(EXTENSION_BY_MEDIA_TYPE, value);
 }
 
 // Local disk is fine for a single-instance prototype. Move this to object

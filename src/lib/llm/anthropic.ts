@@ -68,7 +68,7 @@ export class AnthropicReceiptParser implements ReceiptParser {
   async parseReceipt({ base64, mediaType }: ReceiptImage): Promise<ParsedReceipt> {
     const message = await this.client.messages.create({
       model: this.model,
-      max_tokens: 1536,
+      max_tokens: 4096,
       tools: [RECEIPT_TOOL],
       tool_choice: { type: "tool", name: RECEIPT_TOOL.name },
       messages: [
@@ -88,6 +88,12 @@ export class AnthropicReceiptParser implements ReceiptParser {
       ],
     });
 
+    // A truncated response yields a half-built tool input that would silently
+    // become a receipt with missing line items.
+    if (message.stop_reason === "max_tokens") {
+      throw new Error("Receipt too long to parse within the token budget.");
+    }
+
     const toolUse = message.content.find(
       (block): block is Anthropic.ToolUseBlock => block.type === "tool_use",
     );
@@ -100,7 +106,8 @@ export class AnthropicReceiptParser implements ReceiptParser {
 }
 
 function normalizeReceipt(input: Record<string, unknown>): ParsedReceipt {
-  const items = Array.isArray(input.items) ? input.items : [];
+  const items = (Array.isArray(input.items) ? input.items : []).map(normalizeItem);
+  const itemsTotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
 
   return {
     merchant: typeof input.merchant === "string" ? input.merchant : null,
@@ -108,8 +115,8 @@ function normalizeReceipt(input: Record<string, unknown>): ParsedReceipt {
     currency: typeof input.currency === "string" ? input.currency : "IDR",
     subtotal: typeof input.subtotal === "number" ? input.subtotal : null,
     tax: typeof input.tax === "number" ? input.tax : null,
-    total: typeof input.total === "number" ? input.total : 0,
-    items: items.map(normalizeItem),
+    total: typeof input.total === "number" ? input.total : itemsTotal,
+    items,
   };
 }
 

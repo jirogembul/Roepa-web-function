@@ -30,9 +30,19 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# credentials & env files
 .env*
 !.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+
+# markdown (auto-generated agent docs & scratch notes); README stays tracked
+*.md
+!README.md
 
 # sqlite database
 /prisma/dev.db

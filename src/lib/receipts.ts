@@ -23,11 +23,17 @@ export interface ReceiptInput {
 // (Postgres, a different schema for multi-company reporting, etc.) means
 // changing this file, not every place that reads/writes receipts.
 
+function toDate(value: string | null): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export async function createReceipt(input: ReceiptInput) {
   return prisma.receipt.create({
     data: {
       merchant: input.merchant,
-      purchasedAt: input.purchasedAt ? new Date(input.purchasedAt) : null,
+      purchasedAt: toDate(input.purchasedAt),
       currency: input.currency,
       subtotal: input.subtotal,
       tax: input.tax,
@@ -54,8 +60,3 @@ export async function listReceipts() {
   });
 }
 
-export async function getSpendingSummary() {
-  const receipts = await prisma.receipt.findMany({ select: { total: true } });
-  const totalSpent = receipts.reduce((sum, r) => sum + r.total, 0);
-  return { totalSpent, receiptCount: receipts.length };
-}
