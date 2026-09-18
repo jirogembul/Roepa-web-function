@@ -56,3 +56,7 @@ service-account*.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# foto struk yang diunggah adalah data pengguna, jangan di-commit
+/public/uploads/receipts/*
+!/public/uploads/receipts/.gitkeep
