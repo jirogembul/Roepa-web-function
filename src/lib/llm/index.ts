@@ -1,4 +1,5 @@
 import { AnthropicReceiptParser } from "./anthropic";
+import { GeminiReceiptParser } from "./gemini";
 import type { ReceiptParser } from "./types";
 
 export type {
@@ -18,6 +19,8 @@ export function getReceiptParser(): ReceiptParser {
   switch (provider) {
     case "anthropic":
       return new AnthropicReceiptParser();
+    case "gemini":
+      return new GeminiReceiptParser();
     default:
       throw new Error(
         `Unknown LLM_PROVIDER "${provider}". Add an adapter in src/lib/llm/ and register it in getReceiptParser().`,

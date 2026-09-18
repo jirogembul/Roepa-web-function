@@ -1,10 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type {
-  ParsedReceipt,
-  ReceiptImage,
-  ReceiptItemDraft,
-  ReceiptParser,
-} from "./types";
+import { EXTRACTION_PROMPT, normalizeReceipt } from "./normalize";
+import type { ParsedReceipt, ReceiptImage, ReceiptParser } from "./types";
 
 const RECEIPT_TOOL = {
   name: "record_receipt",
@@ -79,10 +75,7 @@ export class AnthropicReceiptParser implements ReceiptParser {
               type: "image",
               source: { type: "base64", media_type: mediaType, data: base64 },
             },
-            {
-              type: "text",
-              text: "Extract every line item and the totals from this shopping receipt. Use null for fields you can't read. Default quantity to 1 when not printed.",
-            },
+            { type: "text", text: EXTRACTION_PROMPT },
           ],
         },
       ],
@@ -105,28 +98,3 @@ export class AnthropicReceiptParser implements ReceiptParser {
   }
 }
 
-function normalizeReceipt(input: Record<string, unknown>): ParsedReceipt {
-  const items = (Array.isArray(input.items) ? input.items : []).map(normalizeItem);
-  const itemsTotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
-
-  return {
-    merchant: typeof input.merchant === "string" ? input.merchant : null,
-    purchasedAt: typeof input.purchasedAt === "string" ? input.purchasedAt : null,
-    currency: typeof input.currency === "string" ? input.currency : "IDR",
-    subtotal: typeof input.subtotal === "number" ? input.subtotal : null,
-    tax: typeof input.tax === "number" ? input.tax : null,
-    total: typeof input.total === "number" ? input.total : itemsTotal,
-    items,
-  };
-}
-
-function normalizeItem(raw: unknown): ReceiptItemDraft {
-  const item = (raw ?? {}) as Record<string, unknown>;
-  return {
-    name: typeof item.name === "string" ? item.name : "Unknown item",
-    quantity: typeof item.quantity === "number" ? item.quantity : 1,
-    unitPrice: typeof item.unitPrice === "number" ? item.unitPrice : null,
-    totalPrice: typeof item.totalPrice === "number" ? item.totalPrice : 0,
-    category: typeof item.category === "string" ? item.category : null,
-  };
-}

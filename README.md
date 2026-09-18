@@ -25,21 +25,29 @@ pelaporan keuangan perusahaan (multi-akun, multi-user, laporan periodik, dst).
   `src/lib/receipts.ts`; ganti ke Postgres nanti cukup ubah `DATABASE_URL`,
   adapter di `db.ts`, dan `datasource.provider` di `prisma/schema.prisma`.
 - **LLM provider pluggable** — lihat `src/lib/llm/`. `getReceiptParser()`
-  memilih implementasi berdasarkan env var `LLM_PROVIDER` (default
-  `anthropic`). Untuk pakai provider lain, buat adapter baru yang
-  mengimplementasikan `ReceiptParser` (satu method: `parseReceipt`) dan
-  daftarkan di `src/lib/llm/index.ts`.
+  memilih implementasi berdasarkan env var `LLM_PROVIDER`:
+  - `gemini` → `@google/genai`, butuh `GEMINI_API_KEY`
+    ([free tier](https://aistudio.google.com/apikey), tanpa kartu kredit)
+  - `anthropic` → `@anthropic-ai/sdk`, butuh `ANTHROPIC_API_KEY`
+
+  Untuk menambah provider lain, buat adapter baru yang mengimplementasikan
+  `ReceiptParser` (satu method: `parseReceipt`), pakai `normalizeReceipt()` dari
+  `src/lib/llm/normalize.ts` untuk merapikan hasilnya, lalu daftarkan di
+  `src/lib/llm/index.ts`. Tidak ada file lain yang perlu disentuh.
 
 ## Setup
 
 ```bash
 cp .env.example .env
-# isi ANTHROPIC_API_KEY di .env
+# isi GEMINI_API_KEY (atau ANTHROPIC_API_KEY, sesuai LLM_PROVIDER)
 
-npm install
+npm install              # postinstall otomatis menjalankan `prisma generate`
 npx prisma migrate dev   # sekali di awal / setiap ubah schema
 npm run dev
 ```
+
+Di Windows PowerShell, pakai `npm.cmd` / `npx.cmd` kalau kena error execution
+policy, atau jalankan `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`.
 
 Buka http://localhost:3000.
 
