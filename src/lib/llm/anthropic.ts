@@ -58,7 +58,7 @@ export class AnthropicReceiptParser implements ReceiptParser {
       );
     }
     this.client = new Anthropic({ apiKey });
-    this.model = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5";
+    this.model = process.env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-5";
   }
 
   async parseReceipt({ base64, mediaType }: ReceiptImage): Promise<ParsedReceipt> {

@@ -54,11 +54,12 @@ export class GeminiReceiptParser implements ReceiptParser {
     this.client = new GoogleGenAI({ apiKey });
     // Google retires models for new API keys, so when this one starts returning
     // 404 the message names its replacement — set GEMINI_MODEL to it.
-    this.model = process.env.GEMINI_MODEL ?? "gemini-3.6-flash";
+    // `||` not `??`: an env var left as "" must fall back, not blank the model.
+    this.model = process.env.GEMINI_MODEL?.trim() || "gemini-3.6-flash";
   }
 
   async parseReceipt({ base64, mediaType }: ReceiptImage): Promise<ParsedReceipt> {
-    const response = await this.client.models.generateContent({
+    const request = {
       model: this.model,
       contents: [
         {
@@ -74,7 +75,17 @@ export class GeminiReceiptParser implements ReceiptParser {
         responseSchema: RECEIPT_SCHEMA,
         maxOutputTokens: 4096,
       },
-    });
+    };
+
+    let response;
+    try {
+      response = await this.client.models.generateContent(request);
+    } catch (error) {
+      // Name the model we actually sent: a 404 body quotes the model Google
+      // matched, which is not obviously the one this build requested.
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`Gemini request for model "${this.model}" failed: ${detail}`);
+    }
 
     // A truncated response yields half-built JSON that would either fail to
     // parse or silently drop line items.

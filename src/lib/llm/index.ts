@@ -14,7 +14,7 @@ export type {
 // implements ReceiptParser. Nothing outside this file needs to know which
 // provider is active.
 export function getReceiptParser(): ReceiptParser {
-  const provider = process.env.LLM_PROVIDER ?? "anthropic";
+  const provider = process.env.LLM_PROVIDER?.trim() || "anthropic";
 
   switch (provider) {
     case "anthropic":
