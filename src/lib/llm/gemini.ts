@@ -52,10 +52,7 @@ export class GeminiReceiptParser implements ReceiptParser {
       );
     }
     this.client = new GoogleGenAI({ apiKey });
-    // An alias rather than a pinned version, so the app keeps working when a
-    // specific model is retired. Pin it with GEMINI_MODEL when reproducibility
-    // matters more than staying current.
-    this.model = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
+    this.model = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
   }
 
   async parseReceipt({ base64, mediaType }: ReceiptImage): Promise<ParsedReceipt> {

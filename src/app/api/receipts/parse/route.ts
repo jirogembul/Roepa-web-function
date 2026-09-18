@@ -2,6 +2,16 @@ import { NextResponse } from "next/server";
 import { getReceiptParser } from "@/lib/llm";
 import { isSupportedImageMediaType, saveReceiptImage } from "@/lib/image";
 
+// API keys must never reach the browser, even inside an error string.
+const API_KEY_PATTERN = /\b(AIza[\w-]{10,}|sk-ant-[\w-]{10,})\b/g;
+
+// A single opaque message for every failure makes a wrong model name look
+// identical to a blurry photo, so the real reason is passed through instead.
+function describeParseFailure(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.replace(API_KEY_PATTERN, "[redacted]").slice(0, 300);
+}
+
 export async function POST(request: Request) {
   const formData = await request.formData();
   const file = formData.get("image");
@@ -29,7 +39,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Receipt parsing failed", error);
     return NextResponse.json(
-      { error: "Gagal membaca struk ini. Coba foto yang lebih jelas." },
+      { error: `Gagal membaca struk: ${describeParseFailure(error)}` },
       { status: 502 },
     );
   }
