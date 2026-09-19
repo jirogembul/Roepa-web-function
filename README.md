@@ -58,11 +58,14 @@ produksi. Databasenya pindah ke Turso (SQLite yang di-host, adapter-nya sama).
 
 1. Buat database di [turso.tech](https://turso.tech) (free tier), catat URL
    `libsql://...` dan auth token-nya.
-2. Terapkan skema sekali dari mesin lokal — `prisma migrate deploy` tidak bisa
-   dipakai di sini karena Prisma 7 hanya menerima URL biasa untuk migration:
-   ```bash
-   turso db shell <nama-db> < prisma/migrations/20260918164830_init/migration.sql
-   ```
+2. Terapkan skema sekali. `prisma migrate deploy` tidak bisa dipakai di sini
+   karena Prisma 7 hanya menerima URL biasa untuk migration, jadi jalankan isi
+   `prisma/migrations/20260918164830_init/migration.sql` langsung:
+   - **Paling mudah:** buka database itu di dashboard Turso, masuk ke tab SQL
+     console/shell, tempel isi file SQL-nya, jalankan. Tidak perlu CLI.
+   - Kalau memakai CLI Turso: `turso db shell <nama-db> < .../migration.sql`
+     di bash/zsh. Di PowerShell operator `<` tidak ada, pakai:
+     `Get-Content .../migration.sql | turso db shell <nama-db>`
 3. Di Vercel, isi environment variables:
 
    | Key | Value |
